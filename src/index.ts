@@ -1,9 +1,9 @@
-import express, { Express, Request, Response } from 'express';
+import express, { Request, Response } from 'express';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
-
+import { fileURLToPath } from 'url';
+import adminAuthRouter from './routes/AdminAuthRoute';
 //environment variables
 dotenv.config();
 
@@ -17,12 +17,14 @@ const __dirname = path.dirname(__filename);
 //middlewares
 app.use(morgan('tiny'));
 app.use('/assets', express.static(path.join(__dirname, 'public')));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: false }));
+app.use(express.json());
 
 //Routes
 app.get('/', (req: Request, res: Response) => {
 	res.send('Hello World! HI');
 });
+app.use('/admin', adminAuthRouter);
 
 //Listener
 app.listen(port, () => {

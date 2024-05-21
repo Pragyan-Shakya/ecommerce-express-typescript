@@ -1,8 +1,9 @@
 import express from 'express';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import adminAuthRouter from './routes/AdminAuthRoute';
 //environment variables
 dotenv.config();
 const port = process.env.PORT;
@@ -18,6 +19,7 @@ app.use(express.urlencoded({ extended: true }));
 app.get('/', (req, res) => {
     res.send('Hello World! HI');
 });
+app.use('/admin', adminAuthRouter);
 //Listener
 app.listen(port, () => {
     console.log(`App listing in http://localhost:${port}`);
