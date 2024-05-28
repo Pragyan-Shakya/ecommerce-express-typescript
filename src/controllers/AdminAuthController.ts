@@ -1,4 +1,4 @@
-import express, { Request, Response, Router } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import AdminAuthService from '../services/AdminAuthService';
 import { RegisterPayload } from '../interfaces/AuthInterfaces';
 
@@ -8,26 +8,21 @@ export default class AuthController {
 	constructor(adminAuthService: AdminAuthService) {
 		this.adminAuthService = adminAuthService;
 	}
-	async register(req: Request, res: Response) {
+	async register(req: Request, res: Response, next: NextFunction) {
 		try {
 			const payload: RegisterPayload = req.body;
-			console.log(payload);
-
 			const token = await this.adminAuthService.register(payload);
 			return res.json({
 				success: true,
 				token: token,
 			});
-		} catch (error) {
-			console.log('Error in register controller: ', error);
-			return res.status(500).json({
-				success: false,
-				message: 'Internal Server Error',
-			});
+		} catch (error: any) {
+			console.log('Error in Register controller: ', error.message);
+			next(error);
 		}
 	}
 
-	async login(req: Request, res: Response) {
+	async login(req: Request, res: Response, next: NextFunction) {
 		try {
 			const { email, password } = req.body;
 
@@ -45,10 +40,7 @@ export default class AuthController {
 			});
 		} catch (error) {
 			console.log('Error in login controller: ', error);
-			return res.status(500).json({
-				success: false,
-				message: 'Internal Server Error',
-			});
+			next(error);
 		}
 	}
 }

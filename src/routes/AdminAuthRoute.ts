@@ -10,12 +10,12 @@ router.get('/', (req, res) => {
 	res.send('Hello World! HI');
 });
 
-router.post('/register', (req, res) => {
-	adminAuthController.register(req, res);
+router.post('/register', (req, res, next) => {
+	adminAuthController.register(req, res, next);
 });
 
-router.post('/login', (req, res) => {
-	adminAuthController.login(req, res);
+router.post('/login', (req, res, next) => {
+	adminAuthController.login(req, res, next);
 });
 
 export default router;

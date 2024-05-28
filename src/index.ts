@@ -4,6 +4,7 @@ import morgan from 'morgan';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import adminAuthRouter from './routes/AdminAuthRoute';
+import { errorHandler } from './middlewares/ErrorHandler';
 //environment variables
 dotenv.config();
 
@@ -25,6 +26,9 @@ app.get('/', (req: Request, res: Response) => {
 	res.send('Hello World! HI');
 });
 app.use('/admin', adminAuthRouter);
+
+//Custom Error Handler
+app.use(errorHandler);
 
 //Listener
 app.listen(port, () => {
