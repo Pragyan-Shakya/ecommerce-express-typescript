@@ -3,7 +3,7 @@ import path from 'path';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
-import adminAuthRouter from './routes/AdminAuthRoute';
+import adminRoutes from './routes/AdminRoute';
 import { errorHandler } from './middlewares/ErrorHandler';
 //environment variables
 dotenv.config();
@@ -25,7 +25,7 @@ app.use(express.json());
 app.get('/', (req: Request, res: Response) => {
 	res.send('Hello World! HI');
 });
-app.use('/admin', adminAuthRouter);
+app.use('/admin', adminRoutes);
 
 //Custom Error Handler
 app.use(errorHandler);

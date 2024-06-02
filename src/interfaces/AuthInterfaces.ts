@@ -1,5 +1,9 @@
 import { Gender, Status } from '@prisma/client';
 
+export interface Tokens {
+	accessToken: string;
+	refreshToken: string;
+}
 export interface RegisterPayload {
 	name: string;
 	email: string;

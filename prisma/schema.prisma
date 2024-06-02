@@ -19,6 +19,16 @@ model Admin {
   status Status @default(inactive)
   createdAt DateTime @default(now()) @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @db.Timestamptz(6)
+  refreshTokens AdminRefreshToken[]
+}
+
+model AdminRefreshToken {
+  id Int @id @default(autoincrement())
+  adminId Int
+  admin Admin @relation(fields: [adminId], references: [id])
+  token String
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
 }
 
 model User {

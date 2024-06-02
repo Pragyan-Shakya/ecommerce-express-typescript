@@ -11,10 +11,12 @@ export default class AuthController {
 	async register(req: Request, res: Response, next: NextFunction) {
 		try {
 			const payload: RegisterPayload = req.body;
-			const token = await this.adminAuthService.register(payload);
+			const { accessToken, refreshToken } =
+				await this.adminAuthService.register(payload);
 			return res.json({
 				success: true,
-				token: token,
+				accessToken,
+				refreshToken: refreshToken,
 			});
 		} catch (error: any) {
 			console.log('Error in Register controller: ', error.message);
@@ -26,20 +28,33 @@ export default class AuthController {
 		try {
 			const { email, password } = req.body;
 
-			const token = await this.adminAuthService.login(email, password);
-			if (!token) {
-				return res.status(401).json({
-					success: false,
-					message: 'Invalid email or password',
-				});
-			}
+			const { accessToken, refreshToken } =
+				await this.adminAuthService.login(email, password);
 
 			return res.json({
 				success: true,
-				token: token,
+				accessToken,
+				refreshToken,
 			});
 		} catch (error) {
 			console.log('Error in login controller: ', error);
+			next(error);
+		}
+	}
+
+	async refresh(req: Request, res: Response, next: NextFunction) {
+		try {
+			const { refreshToken: refreshTokenFromRequest } = req.body;
+			const { accessToken, refreshToken } =
+				await this.adminAuthService.refresh(refreshTokenFromRequest);
+
+			return res.json({
+				success: true,
+				accessToken,
+				refreshToken,
+			});
+		} catch (error) {
+			console.log('Error in Refresh controller', error);
 			next(error);
 		}
 	}

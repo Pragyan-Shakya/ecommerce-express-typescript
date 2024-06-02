@@ -1,8 +1,13 @@
 import bcrypt from 'bcryptjs';
 import { PrismaClient, Prisma } from '@prisma/client';
-import { generateToken } from '../utils/jwt';
-import { RegisterPayload } from '../interfaces/AuthInterfaces';
-import { BadRequestError, NotFoundError } from '../errors/CustomErrors';
+import { generateToken, verifyToken } from '../utils/jwt';
+import { RegisterPayload, Tokens } from '../interfaces/AuthInterfaces';
+import {
+	BadRequestError,
+	NotFoundError,
+	UnauthorizedError,
+} from '../errors/CustomErrors';
+import { Admin } from '../interfaces/AdminInterfaces';
 
 const prisma: PrismaClient = new PrismaClient();
 export default class AdminAuthService {
@@ -15,10 +20,8 @@ export default class AdminAuthService {
 		avatar,
 		gender,
 		status,
-	}: RegisterPayload): Promise<string> {
+	}: RegisterPayload): Promise<Tokens> {
 		try {
-			console.log(password);
-
 			const encryptedPassword = await bcrypt.hash(password, 10);
 			const admin = await prisma.admin.create({
 				data: {
@@ -31,8 +34,14 @@ export default class AdminAuthService {
 					gender,
 					status,
 				},
+				select: {
+					id: true,
+					email: true,
+					name: true,
+					status: true,
+				},
 			});
-			return generateToken(admin.id);
+			return await this.getToken(admin);
 		} catch (error) {
 			if (error instanceof Prisma.PrismaClientKnownRequestError) {
 				// The .code property can be accessed in a type-safe manner
@@ -47,7 +56,7 @@ export default class AdminAuthService {
 		}
 	}
 
-	async login(email: string, password: string): Promise<string | null> {
+	async login(email: string, psw: string): Promise<Tokens> {
 		try {
 			const admin = await prisma.admin.findUnique({
 				where: { email },
@@ -59,11 +68,69 @@ export default class AdminAuthService {
 				);
 			}
 
-			const chkPsw = await bcrypt.compare(password, admin.password);
-			if (!chkPsw) return null;
-
-			return generateToken(admin.id);
+			const chkPsw = await bcrypt.compare(psw, admin.password);
+			if (!chkPsw) {
+				throw new UnauthorizedError(`Invalid email or password`);
+			}
+			const { password, ...tokenUser } = admin;
+			return await this.getToken(tokenUser);
 		} catch (error: any) {
+			throw error;
+		}
+	}
+
+	async refresh(token: string): Promise<Tokens> {
+		try {
+			const adminId = verifyToken(token, 'refreshToken') as {
+				adminId: number;
+			};
+			const refreshTokenCheck = await prisma.adminRefreshToken.findFirst({
+				where: {
+					token: token,
+					adminId: adminId.adminId,
+				},
+				select: {
+					id: true,
+					admin: true,
+				},
+			});
+
+			if (!refreshTokenCheck) {
+				throw new UnauthorizedError('Invalid refresh token');
+			}
+			const { password, ...tokenUser } = refreshTokenCheck.admin;
+			const { accessToken, refreshToken } = generateToken(tokenUser);
+
+			await prisma.adminRefreshToken.update({
+				data: {
+					token: refreshToken,
+				},
+				where: {
+					id: refreshTokenCheck.id,
+				},
+			});
+
+			return { accessToken, refreshToken };
+		} catch (error) {
+			console.log('Error in Refresh: ', error);
+
+			throw new UnauthorizedError('Invalid refresh token');
+		}
+	}
+
+	async getToken(admin: Admin) {
+		try {
+			const { accessToken, refreshToken } = generateToken(admin);
+			await prisma.adminRefreshToken.create({
+				data: {
+					adminId: admin.id,
+					token: refreshToken,
+				},
+			});
+
+			return { accessToken, refreshToken };
+		} catch (error) {
+			console.log('Error in storing refresh token: ', error);
 			throw error;
 		}
 	}
